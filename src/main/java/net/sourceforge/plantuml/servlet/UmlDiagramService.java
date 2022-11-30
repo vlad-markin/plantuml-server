@@ -73,6 +73,8 @@ public abstract class UmlDiagramService extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final int idx = UrlDataExtractor.getIndex(request.getRequestURI(), 0);
+        final boolean isCompressed = "compressed".equalsIgnoreCase(
+                UrlDataExtractor.getEncodedDiagram(request.getRequestURI()));
 
         // read textual diagram source from request body
         final StringBuilder uml = new StringBuilder();
@@ -83,7 +85,10 @@ public abstract class UmlDiagramService extends HttpServlet {
             }
         }
 
-        doDiagramResponse(request, response, uml.toString(), idx);
+        doDiagramResponse(request,
+                response,
+                isCompressed ? UmlExtractor.getUmlSource(uml.toString()) : uml.toString(),
+                idx);
     }
 
     /**
