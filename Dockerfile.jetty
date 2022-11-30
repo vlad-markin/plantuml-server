@@ -15,7 +15,12 @@ FROM jetty:11.0.7-jre11-slim
 # Changes are only active if `/generate-jetty-start.sh` is called!
 RUN sed -i 's/# jetty\.httpConfig\.uriCompliance=DEFAULT/jetty.httpConfig.uriCompliance=DEFAULT,AMBIGUOUS_EMPTY_SEGMENT/g' /var/lib/jetty/start.d/server.ini
 
+ADD http://beta.plantuml.net/elk-full.jar $JETTY_HOME/lib/ext
+
 USER root
+
+RUN chown jetty:jetty $JETTY_HOME/lib/ext/elk-full.jar
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         fonts-noto-cjk \
