@@ -14,6 +14,7 @@ FROM jetty:11.0.15-jre11
 # Hence: allow AMBIGUOUS_EMPTY_SEGMENT
 # Changes are only active if `/generate-jetty-start.sh` is called!
 RUN sed -i 's/# jetty\.httpConfig\.uriCompliance=DEFAULT/jetty.httpConfig.uriCompliance=DEFAULT,AMBIGUOUS_EMPTY_SEGMENT/g' /var/lib/jetty/start.d/server.ini
+RUN echo 'jetty.httpConfig.requestHeaderSize=65535' >> /var/lib/jetty/start.d/http.ini
 
 USER root
 
