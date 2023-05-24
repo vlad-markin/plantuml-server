@@ -60,6 +60,8 @@
 
     <!-- main versions -->
     <plantuml.version>1.2023.8</plantuml.version>
+    <!-- elk version -->
+    <elk.version>0.8.1</elk.version>
     <!-- Please keep the jetty version identical with the docker image -->
     <jetty.version>11.0.15</jetty.version>
     <!--
@@ -124,6 +126,16 @@
       <artifactId>plantuml</artifactId>
       <version>${plantuml.version}</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.elk</groupId>
+      <artifactId>org.eclipse.elk.core</artifactId>
+      <version>${elk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.elk</groupId>
+      <artifactId>org.eclipse.elk.alg.layered</artifactId>
+      <version>${elk.version}</version>
     </dependency>
     <dependency>
       <groupId>org.webjars.npm</groupId>

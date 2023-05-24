@@ -37,6 +37,10 @@ import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.OptionFlags;
 import net.sourceforge.plantuml.servlet.utility.UmlExtractor;
 import net.sourceforge.plantuml.servlet.utility.UrlDataExtractor;
+import org.eclipse.elk.alg.common.compaction.options.PolyominoOptions;
+import org.eclipse.elk.alg.layered.options.LayeredMetaDataProvider;
+import org.eclipse.elk.core.data.LayoutMetaDataService;
+import org.eclipse.elk.core.labels.LabelManagementOptions;
 
 /**
  * Common service servlet to produce diagram from compressed UML source contained in the end part of the requested URI.
@@ -49,6 +53,10 @@ public abstract class UmlDiagramService extends HttpServlet {
         if ("true".equalsIgnoreCase(System.getenv("ALLOW_PLANTUML_INCLUDE"))) {
             OptionFlags.ALLOW_INCLUDE = true;
         }
+        final LayoutMetaDataService layoutMetaDataService = LayoutMetaDataService.getInstance();
+        layoutMetaDataService.registerLayoutMetaDataProviders(new LayeredMetaDataProvider());
+        layoutMetaDataService.registerLayoutMetaDataProviders(new PolyominoOptions());
+        layoutMetaDataService.registerLayoutMetaDataProviders(new LabelManagementOptions());
     }
 
     @Override
