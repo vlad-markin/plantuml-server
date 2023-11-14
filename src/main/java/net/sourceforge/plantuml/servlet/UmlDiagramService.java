@@ -29,7 +29,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.OptionFlags;
+import net.sourceforge.plantuml.code.ArobaseStringCompressor;
 import net.sourceforge.plantuml.code.CompressionZlib;
+import net.sourceforge.plantuml.code.StringCompressor;
 import net.sourceforge.plantuml.servlet.utility.UmlExtractor;
 import net.sourceforge.plantuml.servlet.utility.UrlDataExtractor;
 import org.eclipse.elk.alg.common.compaction.options.PolyominoOptions;
@@ -57,6 +59,8 @@ public abstract class UmlDiagramService extends HttpServlet {
         layoutMetaDataService.registerLayoutMetaDataProviders(new PolyominoOptions());
         layoutMetaDataService.registerLayoutMetaDataProviders(new LabelManagementOptions());
     }
+
+    private static final StringCompressor stringCompressor = new ArobaseStringCompressor();
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -106,12 +110,14 @@ public abstract class UmlDiagramService extends HttpServlet {
                     umlString = (new CompressionZlib())
                         .decompress(request.getInputStream().readAllBytes())
                         .toUFT8String();
+                    umlString = stringCompressor.decompress(umlString);
                 } catch (Exception e) {
                     // return default umlString with error message
                 }
                 break;
             default:
                 umlString = readDiagramFromRequestBody(request);
+                umlString = stringCompressor.decompress(umlString);
         }
 
         doDiagramResponse(request,
