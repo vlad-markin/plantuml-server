@@ -23,24 +23,23 @@
  */
 package net.sourceforge.plantuml.servlet;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-
-import javax.imageio.IIOException;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.OptionFlags;
+import net.sourceforge.plantuml.code.CompressionZlib;
 import net.sourceforge.plantuml.servlet.utility.UmlExtractor;
 import net.sourceforge.plantuml.servlet.utility.UrlDataExtractor;
 import org.eclipse.elk.alg.common.compaction.options.PolyominoOptions;
 import org.eclipse.elk.alg.layered.options.LayeredMetaDataProvider;
 import org.eclipse.elk.core.data.LayoutMetaDataService;
 import org.eclipse.elk.core.labels.LabelManagementOptions;
+
+import javax.imageio.IIOException;
+import java.io.BufferedReader;
+import java.io.IOException;
 
 /**
  * Common service servlet to produce diagram from compressed UML source contained in the end part of the requested URI.
@@ -78,12 +77,8 @@ public abstract class UmlDiagramService extends HttpServlet {
         doDiagramResponse(request, response, uml, idx);
     }
 
-    @Override
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        final int idx = UrlDataExtractor.getIndex(request.getRequestURI(), 0);
-        final boolean isCompressed = "compressed".equalsIgnoreCase(
-                UrlDataExtractor.getEncodedDiagram(request.getRequestURI()));
 
+    private String readDiagramFromRequestBody(HttpServletRequest request) throws IOException {
         // read textual diagram source from request body
         final StringBuilder uml = new StringBuilder();
         try (BufferedReader in = request.getReader()) {
@@ -93,9 +88,35 @@ public abstract class UmlDiagramService extends HttpServlet {
             }
         }
 
+        return uml.toString();
+    }
+
+    @Override
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final int idx = UrlDataExtractor.getIndex(request.getRequestURI(), 0);
+        final String compression = UrlDataExtractor.getEncodedDiagram(request.getRequestURI(), "").toLowerCase();
+
+        String umlString = "@startuml\ntitle Unable to decode string\n@enduml";
+        switch (compression) {
+            case "compressed":
+                umlString = UmlExtractor.getUmlSource(readDiagramFromRequestBody(request));
+                break;
+            case "zopfli":
+                try {
+                    umlString = (new CompressionZlib())
+                        .decompress(request.getInputStream().readAllBytes())
+                        .toUFT8String();
+                } catch (Exception e) {
+                    // return default umlString with error message
+                }
+                break;
+            default:
+                umlString = readDiagramFromRequestBody(request);
+        }
+
         doDiagramResponse(request,
                 response,
-                isCompressed ? UmlExtractor.getUmlSource(uml.toString()) : uml.toString(),
+                umlString,
                 idx);
     }
 
