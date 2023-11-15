@@ -60,7 +60,7 @@ public abstract class UmlDiagramService extends HttpServlet {
         layoutMetaDataService.registerLayoutMetaDataProviders(new LabelManagementOptions());
     }
 
-    private static final StringCompressor stringCompressor = new ArobaseStringCompressor();
+    private static final StringCompressor STRING_COMPRESSOR = new ArobaseStringCompressor();
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -110,14 +110,14 @@ public abstract class UmlDiagramService extends HttpServlet {
                     umlString = (new CompressionZlib())
                         .decompress(request.getInputStream().readAllBytes())
                         .toUFT8String();
-                    umlString = stringCompressor.decompress(umlString);
+                    umlString = STRING_COMPRESSOR.decompress(umlString);
                 } catch (Exception e) {
                     // return default umlString with error message
                 }
                 break;
             default:
                 umlString = readDiagramFromRequestBody(request);
-                umlString = stringCompressor.decompress(umlString);
+                umlString = STRING_COMPRESSOR.decompress(umlString);
         }
 
         doDiagramResponse(request,
