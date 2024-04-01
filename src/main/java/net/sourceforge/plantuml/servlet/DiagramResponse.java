@@ -28,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +51,20 @@ import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.error.PSystemError;
 import net.sourceforge.plantuml.preproc.Defines;
 import net.sourceforge.plantuml.version.Version;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 /**
  * Delegates the diagram generation from the UML source and the filling of the HTTP response with the diagram in the
@@ -83,6 +99,62 @@ public class DiagramResponse {
      */
     private HttpServletResponse response;
 
+
+    private static final String WATERMARK_TEXT =
+        "<?xml version=\"1.0\" encoding=\"us-ascii\" standalone=\"no\"?>\n"
+        + "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" "
+        + "contentStyleType=\"text/css\">"
+        + "<g>"
+            + "<text font-family=\"sans-serif\" font-size=\"12\" y=\"19\" x=\"19\" stroke-width=\"0\" fill=\"#bf0000\">"
+            +   "<tspan>&#1042;&#1099; &#1080;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1091;&#1077;&#1090;&#1077; "
+            +       "&#1087;&#1091;&#1073;&#1083;&#1080;&#1095;&#1085;&#1099;&#1081; "
+            +       "&#1090;&#1077;&#1089;&#1090;&#1086;&#1074;&#1099;&#1081; "
+            +       "&#1089;&#1077;&#1088;&#1074;&#1077;&#1088;</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1088;&#1077;&#1085;&#1076;&#1077;&#1088;&#1080;&#1085;&#1075;&#1072; "
+            +       "&#1086;&#1090; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1099; DocHub.</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1045;&#1089;&#1083;&#1080; "
+            +       "&#1074;&#1099; &#1087;&#1086;&#1085;&#1080;&#1084;&#1072;&#1077;&#1090;&#1077;, "
+            +       "&#1095;&#1090;&#1086; "
+            +       "&#1101;&#1090;&#1086; &#1090;&#1077;&#1089;&#1090;&#1086;&#1074;&#1099;&#1081;</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1080; &#1087;&#1091;&#1073;&#1083;&#1080;&#1095;&#1085;&#1099;&#1081; "
+            +       "&#1089;&#1077;&#1088;&#1074;&#1077;&#1088;,</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1085;&#1086; &#1093;&#1086;&#1090;&#1080;&#1090;&#1077; "
+            +       "&#1080;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1100; "
+            +       "&#1077;&#1075;&#1086; "
+            +       "&#1076;&#1072;&#1083;&#1100;&#1096;&#1077; &#1073;&#1077;&#1079;</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1101;&#1090;&#1086;&#1081; "
+            +       "&#1085;&#1072;&#1076;&#1087;&#1080;&#1089;&#1080;,</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1080;&#1079;&#1084;&#1077;&#1085;&#1080;&#1090;&#1077; &#1074; "
+            +       "&#1085;&#1072;&#1089;&#1090;&#1088;&#1086;&#1081;&#1082;&#1072;&#1093;</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">&#1089;&#1089;&#1099;&#1083;&#1082;&#1091; &#1085;&#1072; "
+            +       "&#1089;&#1077;&#1088;&#1074;&#1077;&#1088; "
+            +       "&#1088;&#1077;&#1085;&#1076;&#1077;&#1088;&#1080;&#1085;&#1075;&#1072;:</tspan>"
+            +   "<tspan x=\"19\" dy=\"1.2em\">"
+            +       "http(s)://seaf.slsdev.ru/seafplantuml/iunderstandiusetestpublicplantuml/</tspan>"
+            + "</text></g>"
+            + "<g>"
+            +   "<text transform=\"rotate(-45 200 212)\" opacity=\"0.2\" stroke=\"#000\" font-family=\"sans-serif\" "
+            +   "font-size=\"67px\" y=\"50%\" x=\"50%\" text-anchor=\"middle\" dominant-baseline=\"central\" "
+            +   "fill=\"#bf0000\">"
+            +       "<tspan>&#1090;&#1077;&#1089;&#1090;&#1086;&#1074;&#1099;&#1081;</tspan>"
+            +       "<tspan x=\"50%\" dy=\"-1.2em\">&#1087;&#1091;&#1073;&#1083;&#1080;&#1095;&#1085;&#1099;&#1081;"
+            +       "</tspan>"
+            +       "<tspan x=\"50%\" dy=\"2.4em\">&#1089;&#1077;&#1088;&#1074;&#1077;&#1088;</tspan>"
+            + "</text></g></svg>";
+
+    private static final Document WATERMARK_DOCUMENT;
+
+    static {
+        try {
+            DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            try (InputStream watermarkInputStream = new ByteArrayInputStream(WATERMARK_TEXT.getBytes())) {
+                WATERMARK_DOCUMENT = documentBuilder.parse(watermarkInputStream);
+            }
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Create new diagram response instance.
      *
@@ -104,7 +176,7 @@ public class DiagramResponse {
      *
      * @throws IOException if an input or output exception occurred
      */
-    public void sendDiagram(String uml, int idx) throws IOException {
+    public void sendDiagram(String uml, int idx, boolean addWatermark) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.setContentType(getContentType());
 
@@ -153,7 +225,79 @@ public class DiagramResponse {
         if (diagram instanceof PSystemError) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
-        diagram.exportDiagram(response.getOutputStream(), idx, new FileFormatOption(format));
+        if (addWatermark) {
+            try (ByteArrayOutputStream svgResult = new ByteArrayOutputStream()) {
+                diagram.exportDiagram(svgResult, idx, new FileFormatOption(format));
+                try {
+                    DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                    try (ByteArrayInputStream svgInputStream = new ByteArrayInputStream(svgResult.toByteArray())) {
+                        Document document = documentBuilder.parse(svgInputStream);
+                        Node root = document.getDocumentElement();
+
+
+
+                        int width = Integer.parseInt(root.getAttributes().getNamedItem("width").getNodeValue()
+                            .replace("px", ""));
+                        int height = Integer.parseInt(root.getAttributes().getNamedItem("height").getNodeValue()
+                            .replace("px", ""));
+                        if (width < 400) {
+                            width = 400;
+                        }
+                        height = height + 150;
+                        root.getAttributes().getNamedItem("width").setNodeValue(width + "px");
+                        root.getAttributes().getNamedItem("height").setNodeValue(height + "px");
+                        root.getAttributes().getNamedItem("viewBox")
+                            .setNodeValue(String.format("0 0 %d %d", width, height));
+
+                        NodeList svgChildren = root.getChildNodes();
+                        Element g = null;
+                        for (int i = 0; i < svgChildren.getLength(); ++i) {
+                           if ("g".equals(svgChildren.item(i).getNodeName())) {
+                               g = (Element) svgChildren.item(i);
+                               break;
+                           }
+                        }
+                        if (g != null) {
+                            g.setAttribute("transform", "translate(0, 150)");
+                            Node watermarkDisclaimer = WATERMARK_DOCUMENT.getDocumentElement().getFirstChild()
+                                .cloneNode(true);
+                            document.adoptNode(watermarkDisclaimer);
+                            root.appendChild(watermarkDisclaimer);
+                            Node watermarkBackground = WATERMARK_DOCUMENT.getDocumentElement().getChildNodes().item(1)
+                                .cloneNode(true);
+                            document.adoptNode(watermarkBackground);
+                            Element watermarkBackgroundText = (Element) watermarkBackground.getFirstChild();
+                            int xCenter = width >> 1;
+                            int yCenter = height >> 1;
+                            watermarkBackgroundText.getAttributes().getNamedItem("transform")
+                                .setNodeValue(String.format("rotate(-45 %d %d)", xCenter, yCenter));
+                            watermarkBackgroundText.getAttributes().getNamedItem("x").setNodeValue(xCenter + "px");
+                            watermarkBackgroundText.getAttributes().getNamedItem("y").setNodeValue(yCenter + "px");
+                            NodeList watermarkBackgroundSpans = watermarkBackgroundText.getChildNodes();
+                            for (int i = 0; i < watermarkBackgroundSpans.getLength(); ++i) {
+                                Node xAttribute = watermarkBackgroundSpans.item(i).getAttributes().getNamedItem("x");
+                                if (xAttribute != null) {
+                                    xAttribute.setNodeValue(xCenter + "px");
+                                }
+                            }
+
+                            watermarkBackgroundText.getAttributes().getNamedItem("font-size")
+                                .setNodeValue((Math.min(height, width) / 6) + "px");
+                            root.insertBefore(watermarkBackground, g);
+                        }
+
+                        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                        DOMSource source = new DOMSource(document);
+                        transformer.transform(source, new StreamResult(response.getOutputStream()));
+                    }
+                } catch (ParserConfigurationException | SAXException | TransformerException e) {
+                    svgResult.writeTo(response.getOutputStream());
+                }
+            }
+
+        } else {
+            diagram.exportDiagram(response.getOutputStream(), idx, new FileFormatOption(format));
+        }
     }
 
     /**

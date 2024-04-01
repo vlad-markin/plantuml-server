@@ -138,7 +138,7 @@ public class ProxyServlet extends HttpServlet {
             if ("map".equals(fmt)) {
                 dr.sendMap(uml, 0);
             } else {
-                dr.sendDiagram(uml, 0);
+                dr.sendDiagram(uml, 0, false);
             }
         } catch (IIOException e) {
             // Browser has closed the connection, so the HTTP OutputStream is closed

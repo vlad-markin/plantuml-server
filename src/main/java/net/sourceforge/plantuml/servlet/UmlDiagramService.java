@@ -42,6 +42,7 @@ import org.eclipse.elk.core.labels.LabelManagementOptions;
 import javax.imageio.IIOException;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Common service servlet to produce diagram from compressed UML source contained in the end part of the requested URI.
@@ -145,7 +146,14 @@ public abstract class UmlDiagramService extends HttpServlet {
         // generate the response
         DiagramResponse dr = new DiagramResponse(response, getOutputFormat(), request);
         try {
-            dr.sendDiagram(uml, idx);
+            boolean addWatermark = false;
+            try {
+                addWatermark = getOutputFormat() == FileFormat.SVG
+                    && !Objects.equals(request.getRequestURI().split("/")[2], "iunderstandiusetestpublicplantuml");
+            } catch (Exception ex) {
+                // ignore
+            }
+            dr.sendDiagram(uml, idx, addWatermark);
         } catch (IIOException e) {
             // Browser has closed the connection, so the HTTP OutputStream is closed
             // Silently catch the exception to avoid annoying log

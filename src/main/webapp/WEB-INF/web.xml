@@ -109,6 +109,7 @@
   <servlet-mapping>
     <servlet-name>svgservlet</servlet-name>
     <url-pattern>/svg/*</url-pattern>
+    <url-pattern>/iunderstandiusetestpublicplantuml/*</url-pattern>
   </servlet-mapping>
 
   <servlet>
