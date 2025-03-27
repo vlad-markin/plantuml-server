@@ -34,7 +34,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import net.sourceforge.plantuml.OptionFlags;
 import net.sourceforge.plantuml.api.PlantumlUtils;
 import net.sourceforge.plantuml.code.NoPlantumlCompressionException;
 import net.sourceforge.plantuml.png.MetadataTag;
@@ -64,13 +63,6 @@ public class PlantUmlServlet extends AsciiCoderServlet {
     @Override
     protected String getServletContextPath() {
         return "uml";
-    }
-
-    static {
-        OptionFlags.ALLOW_INCLUDE = false;
-        if ("true".equalsIgnoreCase(System.getenv("ALLOW_PLANTUML_INCLUDE"))) {
-            OptionFlags.ALLOW_INCLUDE = true;
-        }
     }
 
     /**

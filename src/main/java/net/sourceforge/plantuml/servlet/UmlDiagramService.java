@@ -28,7 +28,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.sourceforge.plantuml.FileFormat;
-import net.sourceforge.plantuml.OptionFlags;
 import net.sourceforge.plantuml.code.ArobaseStringCompressor;
 import net.sourceforge.plantuml.code.CompressionZlib;
 import net.sourceforge.plantuml.code.StringCompressor;
@@ -50,10 +49,6 @@ import java.io.IOException;
 public abstract class UmlDiagramService extends HttpServlet {
 
     static {
-        OptionFlags.ALLOW_INCLUDE = false;
-        if ("true".equalsIgnoreCase(System.getenv("ALLOW_PLANTUML_INCLUDE"))) {
-            OptionFlags.ALLOW_INCLUDE = true;
-        }
         final LayoutMetaDataService layoutMetaDataService = LayoutMetaDataService.getInstance();
         layoutMetaDataService.registerLayoutMetaDataProviders(new LayeredMetaDataProvider());
         layoutMetaDataService.registerLayoutMetaDataProviders(new PolyominoOptions());
